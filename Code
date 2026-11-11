@@ -1,0 +1,34 @@
+import pandas as pd
+
+df = pd.read_csv("output1.csv")
+df.columns = df.columns.str.strip()
+
+df["Timestamp"] = pd.to_datetime(df["Timestamp"], unit="s")
+per_sec = df.set_index("Timestamp").resample("1s").agg(
+    packets=("Length", "size"), bytes=("Length", "sum")
+)
+
+print("Null values in each column are: \n", df.isna().sum())
+
+print(df[df["Source IP"].isna()]["Length"].value_counts().head())
+
+# Protocol mix
+proto_map = {1: "ICMP", 6: "TCP", 17: "UDP"}
+df["Proto"] = df["Protocol"].map(proto_map).fillna(df["Protocol"].astype("string"))
+print(df["Proto"].value_counts(dropna=False))
+
+print(df["Source IP"].value_counts().head(10))
+print(df["Destination IP"].value_counts().head(10))
+
+print(df["Length"].describe())
+
+# Capture duration
+print(df["Timestamp"].min(), df["Timestamp"].max())
+
+import matplotlib.pyplot as plt
+
+per_sec = df.set_index("Timestamp").resample("1s").agg(
+    packets=("Length", "size"), bytes=("Length", "sum")
+)
+per_sec["packets"].plot(figsize=(12, 4), title="Packets per second")
+plt.show()
